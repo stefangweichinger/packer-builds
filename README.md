@@ -26,3 +26,7 @@ PACKER_LOG=1 PACKER_LOG_PATH=packer.log packer build -force  -only=debian.virtua
 
 This is still a work in progress. Some variables are assigned correctly, some not. More research and learning needed.
 Suggestions/PRs welcome ;-)
+
+The magic should happen at https://github.com/stefangweichinger/packer-builds/blob/b9a48b4a7bb5579529796fc47c0fd5f997f6ff84/debian-improved.pkr.hcl#L106
+
+Currently the script sources the static preseed-file.
