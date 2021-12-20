@@ -1,8 +1,8 @@
 # https://www.debian.org/releases/bullseye/example-preseed.txt
 
 ### Localization
-d-i debian-installer/locale string ${var.locale}
-d-i keyboard-configuration/xkb-keymap select ${var.keyboard}
+d-i debian-installer/locale string ${locale}
+d-i keyboard-configuration/xkb-keymap select ${keyboard}
 
 ### Network configuration
 #d-i netcfg/enable boolean true
@@ -14,9 +14,9 @@ d-i netcfg/wireless_wep string
 
 ### Mirror settings
 d-i mirror/country string manual
-d-i mirror/http/hostname string ${var.mirror}
+d-i mirror/http/hostname string ${mirror}
 d-i mirror/http/directory string /debian
-d-i mirror/http/proxy string ${var.apt_cache_url}
+d-i mirror/http/proxy string ${apt_cache_url}
 #d-i mirror/http/proxy string
 
 ### Account setup
@@ -24,16 +24,17 @@ d-i mirror/http/proxy string ${var.apt_cache_url}
 d-i passwd/root-login boolean false
 
 # create the vagrant account, password = vagrant as per https://www.vagrantup.com/docs/boxes/base
-d-i passwd/user-fullname string ${var.ssh_username}
+d-i passwd/user-fullname string ${username}
 d-i passwd/user-uid string 1000
-d-i passwd/username string ${var.ssh_username}
-d-i passwd/user-password-crypted password $6$22FQNGFudjDgx9Ss$vkEbaR74hbh8ArfYBoZyFT5QcrMpBN48dhKyFM.bv9ZsIPlbgrP1T86LS7ZB0w7u0M3NgLlveZ/1fRDSx.aNO/
+d-i passwd/username string ${username}
+d-i passwd/user-password password ${password}
+d-i passwd/user-password-again password ${password}
 d-i user-setup/allow-password-weak boolean true
 d-i user-setup/encrypt-home boolean false
 
 ### Clock and time zone setup
 d-i clock-setup/utc boolean true
-d-i time/zone string ${var.timezone}
+d-i time/zone string ${timezone}
 d-i clock-setup/ntp boolean false
 
 ### Partitioning
@@ -52,7 +53,14 @@ d-i partman/confirm_nooverwrite boolean true
 ### Package selection
 d-i base-installer/install-recommends boolean false
 tasksel tasksel/first multiselect standard, ssh-server
-d-i pkgsel/include string build-essential dkms linux-headers-amd64
+
+#d-i pkgsel/include string build-essential dkms linux-headers-amd64
+
+d-i pkgsel/include %{ for install in installs ~}${install} %{ endfor }string
+ openssh-server cryptsetup build-essential libssl-dev libreadline-dev zlib1g-dev
+ linux-source dkms nfs-common linux-headers-$(uname -r) perl cifs-utils
+ software-properties-common rsync ifupdown
+
 d-i pkgsel/install-language-support boolean false
 popularity-contest popularity-contest/participate boolean false
 d-i apt-setup/services-select multiselect security, updates
@@ -93,10 +101,10 @@ d-i finish-install/reboot_in_progress note
 d-i preseed/late_command string \
     in-target sed -i 's/^%sudo.*$/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers; \
     in-target /bin/sh -c "echo 'Defaults env_keep += \"SSH_AUTH_SOCK\"' >> /etc/sudoers"; \
-    in-target mkdir -p /home/vagrant/.ssh; \
-    in-target /bin/sh -c "echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHnascY26NkLCYOgr+niPXUw3DATiMFm6Z0FJ53cBkIC sgw-ed25519-key-2018' >> /home/vagrant/.ssh/authorized_keys"; \
-    in-target chown -R vagrant:vagrant /home/vagrant/; \
-    in-target chmod -R go-rwx /home/vagrant/.ssh/authorized_keys; \
+    in-target mkdir -p /home/${username}/.ssh; \
+    in-target /bin/sh -c "echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHnascY26NkLCYOgr+niPXUw3DATiMFm6Z0FJ53cBkIC sgw-ed25519-key-2018' >> /home/${username}/.ssh/authorized_keys"; \
+    in-target chown -R ${username}:${username} /home/${username}/; \
+    in-target chmod -R go-rwx /home/${username}/.ssh/authorized_keys; \
     in-target sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config; \
     in-target sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config; \
     in-target rm /etc/udev/rules.d/70-persistent-net.rules; \
